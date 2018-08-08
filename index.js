@@ -124,3 +124,17 @@ const levelChars = {
   ".": 'empty', "#": 'wall', "+": 'lava',
   "@": Player, "o": Coin, "=": Lava, "|": Lava, "v": Lava
 };
+
+let simpleLevel = new Level(simpleLevelPlan);
+console.log(simpleLevel)
+
+function elt(name, attrs, ...children){
+  let dom = document.createElement(name);
+  for(let attr of Object.keys(attrs)) {
+    dom.setAttribute(attr, attrs[attr]);
+  }
+  for(let child of children){
+    dom.appendChild(child);
+  }
+  return dom
+}
