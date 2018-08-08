@@ -41,7 +41,7 @@ class State {
     return this.actors.find(a => a.type == "player");
   }
 }
-
+ //Vec is the position of an actor in x,y coordinates
 class Vec {
   constructor(x,y){
     this.x = x; this.y = y;
@@ -53,3 +53,18 @@ class Vec {
     return new Vec(this.x * factor, this.y * factor);
   }
 }
+
+class Player {
+  constructor(pos, speed){
+    this.pos = pos;
+    this.spedd = speed;
+  }
+
+  get type() { return "player";}
+
+  static create(pos) {
+    return new Player(pos.plus(new Vec(0, -0.5)), new Vec(0 , 0));
+  }
+}
+
+Player.prototype.size = new Vec(0.8, 1.5);
