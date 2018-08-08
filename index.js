@@ -1,3 +1,14 @@
+let simpleLevelPlan = `
+......................
+..#................#..
+..#..............=.#..
+..#.........o.o....#..
+..#.@......#####...#..
+..#####............#..
+......#++++++++++++#..
+......##############..
+......................`;
+
 class Level {
   constructor(plan){
     //split entire map plan into arrays for each line or row
@@ -108,3 +119,8 @@ class Coin {
 }
 
 Coin.prototype.size = new Vec(0.6, 0.6);
+
+const levelChars = {
+  ".": 'empty', "#": 'wall', "+": 'lava',
+  "@": Player, "o": Coin, "=": Lava, "|": Lava, "v": Lava
+};
