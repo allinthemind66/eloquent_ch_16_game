@@ -216,7 +216,7 @@ Level.prototype.touches = function(pos, size, type){
   var xEnd = Math.ceil(pos.x + size.x);
   var yStart = Math.floor(pos.y);
   var yEnd = Math.ceil(pos.y + size.y);
-
+//loops over a series of coordinates around a rectangle (pos and size) and returns true if it matches the type
   for(var y = yStart; y < yEnd; y++){
     for(var x = xStart; x < xEnd; x++){
       let isOutside = x < 0 || x >= this.width || y < 0 || y >= this.height;
