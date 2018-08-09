@@ -175,3 +175,11 @@ function drawActors(actors){
     return rect;
   }));
 }
+
+DOMDisplay.prototype.syncState = function(state) {
+  if(this.actorLayer) this.actorLayer.remove();
+  this.actorLayer = drawActors(state.actors);
+  this.dom.appendChild(this.actorLayer);
+  this.dom.className = `game ${state.status}`;
+  this.scrollPlayerIntoView(state);
+};
