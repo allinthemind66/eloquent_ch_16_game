@@ -128,6 +128,8 @@ const levelChars = {
 let simpleLevel = new Level(simpleLevelPlan);
 console.log(simpleLevel)
 
+
+//this function creates html elements and attributes for those elements
 function elt(name, attrs, ...children){
   let dom = document.createElement(name);
   for(let attr of Object.keys(attrs)) {
@@ -142,8 +144,23 @@ function elt(name, attrs, ...children){
 class DOMDisplay {
   constructor(parent, level){
     this.dom = elt('div', {class: 'game'}, drawGrid(level));
+    //this.actorLayer will be used to track the element that holds the actors so that they
+    //can easily be removed and replaced.
     this.actorLayer = null;
     parent.appendChild(this.dom);
   }
   clear() { this.dom.remove(); }
+}
+
+//this is the amount of pixels per unit
+const scale = 20;
+
+
+//background is drawn as a table element
+function drawGrid(level){
+  return elt("table", {
+    class: "background",
+    style: `width: ${level.width * scale}px`
+  }, ...level.rows.map(row => elt("tr", {style: `height: ${scale}px`}, ...row.map(type => elt("td", {class: type})))
+  ))
 }
