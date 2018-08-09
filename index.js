@@ -53,6 +53,8 @@ class State {
   }
 }
  //Vec is the position of an actor in x,y coordinates
+ //An Actor's pos propery holds the coordinates of the elements top left corner
+ //An actors size property holds its size
 class Vec {
   constructor(x,y){
     this.x = x; this.y = y;
@@ -248,7 +250,18 @@ State.prototype.update = function(time, keys) {
 
 function overlap(actor1, actor2){
   return actor1.pos.x + actor1.size.x > actor2.pos.x &&
-         actor1.pos.x < actor.pos.x + actor2.size.x &&
+         actor1.pos.x < actor2.pos.x + actor2.size.x &&
          actor1.pos.y + actor1.size.y > actor2.pos.y &&
          actor1.pos.y < actor2.pos.y + actor.size.y;
+}
+
+Lava.prototype.collide = function(state){
+  return new State(state.level, state.actors, "lost");
+};
+
+Coin.prototype.collide = function(state){
+  let filtered = state.actors.filter(a => a != this);
+  let status = state.status;
+  if(!filtered.some(a => a.type == "coin")) status = "won";
+  return new State(state.level, filtered, status);
 }
