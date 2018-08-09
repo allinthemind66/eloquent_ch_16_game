@@ -1,3 +1,4 @@
+/*We dont want layout of table to depend upon contents of its cells. */
 .background {
   background: rgb(52, 166, 251);
   table-layout: fixed;
@@ -11,4 +12,16 @@
 }
 .wall {
   background: white;
+}
+
+.actor {
+  position: absolute;
+}
+
+.coin {
+  background: rgb(241, 229, 89);
+}
+
+.player {
+  background: rgb(64, 64, 64);
 }
