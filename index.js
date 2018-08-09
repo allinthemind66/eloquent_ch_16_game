@@ -41,7 +41,7 @@ class State {
   constructor(level, actors, status){
     //status will switch to lost or won at end of game
     this.level = level;
-    this .actors = actors;
+    this.actors = actors;
     this.status = status;
   }
   static start(level){
@@ -68,7 +68,7 @@ class Vec {
 class Player {
   constructor(pos, speed){
     this.pos = pos;
-    this.spedd = speed;
+    this.speed = speed;
   }
 
   get type() { return "player";}
@@ -137,4 +137,13 @@ function elt(name, attrs, ...children){
     dom.appendChild(child);
   }
   return dom
+}
+
+class DOMDisplay {
+  constructor(parent, level){
+    this.dom = elt('div', {class: 'game'}, drawGrid(level));
+    this.actorLayer = null;
+    parent.appendChild(this.dom);
+  }
+  clear() { this.dom.remove(); }
 }
