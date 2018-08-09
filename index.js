@@ -125,8 +125,8 @@ const levelChars = {
   "@": Player, "o": Coin, "=": Lava, "|": Lava, "v": Lava
 };
 
-let simpleLevel = new Level(simpleLevelPlan);
-console.log(simpleLevel)
+//let simpleLevel = new Level(simpleLevelPlan);
+//console.log(simpleLevel)
 
 
 //this function creates html elements and attributes for those elements
@@ -170,8 +170,8 @@ function drawActors(actors){
     let rect = elt("div", {class: `actor ${actor.type}`});
     rect.style.width = `${actor.size.x * scale}px`;
     rect.style.height = `${actor.size.y * scale}px`;
-    rect.style.left = `${actor.position.x * scale}px`;
-    rect.style.top = `${actor.position.y * scale}px`;
+    rect.style.left = `${actor.pos.x * scale}px`;
+    rect.style.top = `${actor.pos.y * scale}px`;
     return rect;
   }));
 }
@@ -185,6 +185,7 @@ DOMDisplay.prototype.syncState = function(state) {
 };
 
 DOMDisplay.prototype.scrollPlayerIntoView = function(state){
+  //client width and client height are attributes on all dom elements
   let width = this.dom.clientWidth;
   let height = this.dom.clientHeight;
   let margin = width/3;
@@ -207,3 +208,5 @@ DOMDisplay.prototype.scrollPlayerIntoView = function(state){
     this.dom.scrollTop = center.y + margin - height;
   }
 };
+
+//UP TO HERE, ALL THE GAME CAN DO IS RENDER A MAP WITH ALL THE NECESSARY ACTORS
