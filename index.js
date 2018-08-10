@@ -308,10 +308,28 @@ Player.prototype.update = function(time, state, keys) {
   let movedY = pos.plus(new Vec(0, ySpeed * time));
   if (!state.level.touches(movedY, this.size, "wall")) {
     pos = movedY;
+
   } else if(keys.ArrowUp && ySpeed > 0) {
+
     ySpeed = -jumpSpeed;
+    console.log(ySpeed)
   } else {
     ySpeed = 0;
   }
   return new Player(pos, new Vec(xSpeed, ySpeed));
 }
+
+function trackKeys(keys){
+  let down = Object.create(null);
+  function(track){
+    if(keys.includes(event.key)) {
+      down[event.key] = event.type == "keydown";
+      event.preventDefault();
+    }
+  }
+  window.addEventListener("keydown", track);
+  window.addEventListener("keyup", track);
+  return down;
+}
+
+const arrowKeys = trackKeys(["ArrowLeft", "ArrowRight", "ArrowUp"])
