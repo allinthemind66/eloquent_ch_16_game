@@ -338,11 +338,35 @@ function runAnimation(frameFunc){
   let lastTime = null;
   function frame(time){
     if(lastTime != null) {
+      //chooses the minimum value, so if the player switches screens and then goes backround
+      //the time step is only 100.
       let timeStep = Math.min(time - lastTime, 100) / 1000;
       if(frameFunc(timeStep) === false) return;
     }
     lastTime = time;
     requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
+  requestAnimationFrame(frame);r
+}
+
+function runLevel(level, Display) {
+  let display = new Display(document.body, level);
+  let state = State.start(level);
+  let ending = 1;
+  return new Promise(resolve => {
+    runAnimation(time => {
+      state = state.update(time, arrowKeys);
+      display.syncState(state);
+      if(state.status == "playing") {
+        return true;
+      } else if (ending > 0) {
+        ending -= time;
+        return true;
+      } else {
+        display.clear();
+        resolve(state.status);
+        return false;
+      }
+    })
+  })
 }
