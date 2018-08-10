@@ -230,6 +230,7 @@ Level.prototype.touches = function(pos, size, type){
 }
 
 State.prototype.update = function(time, keys) {
+  //"Step" is a process of calculating system's next state. "Timestep" is the time interval for which simulation will progress during next "step".
   let actors = this.actors.map(actor => actor.update(time, this, keys));
   let newState = new State(this.level, actors, this.status);
 
@@ -271,8 +272,19 @@ Lava.prototype.update = function(time, state) {
   if (!state.level.touches(newPos, this.size, "wall")) {
     return new Lava(newPos, this.speed, this.reset);
   } else if (this.reset){
+    //dripping lava has a reset position
     return new Lava(this.reset, this.speed, this.reset);
   } else {
+    //bouncing lava, inverts its speed by multiplying by -1
     return new Lava(this.pos, this.speed.times(-1));
   }
 }
+
+const wobbleSpeed = 8, wobbleDist = 0.07;
+
+Coin.prototype.update = function(time){
+  let wobble = this.wobble + time * wobbleSpeed;
+  let wobblePos = Math.sin(wobble) * wobbleDist;
+  return new Coin(this.basePos.plus(new Vec(0, wobblePos)),
+                  this.basePos, wobble);
+};
