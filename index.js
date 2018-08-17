@@ -76,11 +76,28 @@ class Player {
   get type() { return "player";}
 
   static create(pos) {
+    //Vec is position of top left of actor
     return new Player(pos.plus(new Vec(0, -0.5)), new Vec(0 , 0));
   }
 }
-
 Player.prototype.size = new Vec(0.8, 1.5);
+
+class Monster {
+  constructor(pos, speed, reset){
+    this.pos = pos;
+    this.speed = speed;
+    this.reset = reset;
+  }
+
+  get type() { return 'monster'}
+
+  static create(pos){
+    return new Monster(pos.plus(new Vec(0, -0.5)), new Vec(4 , 0));
+  }
+}
+
+Monster.prototype.size = new Vec(0.8, 1.5)
+
 
 class Lava {
   constructor(pos, speed, reset){
@@ -116,7 +133,7 @@ class Coin {
 
   static create(pos){
     let basePos = pos.plus(new Vec(0.2, 0.1));
-    return new Coin(basePos, basePos, Math.random() * Math.PI * 2);
+    return new Coin(basePos, basePos, Math.random() * Math.PI / 2);
   }
 }
 
@@ -124,7 +141,7 @@ Coin.prototype.size = new Vec(0.6, 0.6);
 
 const levelChars = {
   ".": 'empty', "#": 'wall', "+": 'lava',
-  "@": Player, "o": Coin, "=": Lava, "|": Lava, "v": Lava
+  "@": Player, "o": Coin, "=": Lava, "|": Lava, "v": Lava, "*": Monster
 };
 
 //let simpleLevel = new Level(simpleLevelPlan);
@@ -148,8 +165,11 @@ class DOMDisplay {
     this.dom = elt('div', {class: 'game'}, drawGrid(level));
     //this.actorLayer will be used to track the element that holds the actors so that they
     //can easily be removed and replaced.
+    //actor layer is a div containing all the actors defined by the
+    //drawActors function
     this.actorLayer = null;
     parent.appendChild(this.dom);
+    console.log('the actor layer is', this.actorLayer)
   }
   clear() { this.dom.remove(); }
 }
@@ -180,7 +200,9 @@ function drawActors(actors){
 
 DOMDisplay.prototype.syncState = function(state) {
   if(this.actorLayer) this.actorLayer.remove();
+  //actor layer is a div with all the actors inside
   this.actorLayer = drawActors(state.actors);
+  // console.log(this.dom)
   this.dom.appendChild(this.actorLayer);
   this.dom.className = `game ${state.status}`;
   this.scrollPlayerIntoView(state);
@@ -188,11 +210,16 @@ DOMDisplay.prototype.syncState = function(state) {
 
 DOMDisplay.prototype.scrollPlayerIntoView = function(state){
   //client width and client height are attributes on all dom elements
+  //they are the viewable portion of an element
   let width = this.dom.clientWidth;
   let height = this.dom.clientHeight;
   let margin = width/3;
+  //margin is used so when the player is two thirds of the way in the viewport
+  //the window will scroll with the player
 
   //the viewport
+  //scroll left and scrollTop are JS DOM methods
+  //gets or sets the number of pixels that an element's content is scrolled to the left or top.
   let left = this.dom.scrollLeft, right = left + width;
   let top = this.dom.scrollTop, bottom = top + height;
 
@@ -214,6 +241,7 @@ DOMDisplay.prototype.scrollPlayerIntoView = function(state){
 //UP TO HERE, ALL THE GAME CAN DO IS RENDER A MAP WITH ALL THE NECESSARY ACTORS BUT IT IS NOT RUNNING
 
 Level.prototype.touches = function(pos, size, type){
+  //calculate all sides of user and rounds up or down so its a bit larger than the user
   var xStart = Math.floor(pos.x);
   var xEnd = Math.ceil(pos.x + size.x);
   var yStart = Math.floor(pos.y);
@@ -221,8 +249,13 @@ Level.prototype.touches = function(pos, size, type){
 //loops over a series of coordinates around a rectangle (pos and size) and returns true if it matches the type
   for(var y = yStart; y < yEnd; y++){
     for(var x = xStart; x < xEnd; x++){
+      // console.log(this)
+      //figures out if the user is outside of the width of the entire game area, width and height are in units from gameLevels
+      // console.log(this.rows[y][x])
       let isOutside = x < 0 || x >= this.width || y < 0 || y >= this.height;
+      //here determines for each block around a player what the player is touching (i.e. wall, empty, ect.)
       let here = isOutside ? "wall" : this.rows[y][x];
+      //returns true when user touches whatever was passed into this function as the third argument
       if (here == type) return true;
     }
   }
@@ -233,16 +266,19 @@ State.prototype.update = function(time, keys) {
   //"Step" is a process of calculating system's next state. "Timestep" is the time interval for which simulation will progress during next "step".
   let actors = this.actors.map(actor => actor.update(time, this, keys));
   let newState = new State(this.level, actors, this.status);
-
+  // console.log(newState.status)
+//returns a new state if the game is lost or is not playing
   if(newState.status != "playing") return newState;
 
   let player = newState.player;
   if(this.level.touches(player.pos, player.size, "lava")) {
+    //this is for the static lava
     return new State(this.level, actors, "lost")
   }
 
   for(let actor of actors){
     if(actor != player && overlap(actor, player)) {
+      //calculates new state based on actors collide method
       newState = actor.collide(newState);
     }
   }
@@ -253,25 +289,51 @@ function overlap(actor1, actor2){
   return actor1.pos.x + actor1.size.x > actor2.pos.x &&
          actor1.pos.x < actor2.pos.x + actor2.size.x &&
          actor1.pos.y + actor1.size.y > actor2.pos.y &&
-         actor1.pos.y < actor2.pos.y + actor.size.y;
+         actor1.pos.y < actor2.pos.y + actor2.size.y;
 }
 
 Lava.prototype.collide = function(state){
   return new State(state.level, state.actors, "lost");
 };
 
+function monsterHit(player, monster){
+  //pos is top left corner
+  // debugger
+//already overlapping, so just check for y coordinate
+  return player.pos.y + player.size.y < monster.pos.y + .5
+}
+Monster.prototype.collide = function(state){
+  let player = state.actors.find(player => player.type == 'player')
+  if(monsterHit(player, this)){
+    let filtered = state.actors.filter(a => a != this);
+    let status = state.status;
+    return new State(state.level, filtered, status);
+  }
+  else{
+    return new State(state.level, state.actors, "lost");
+  }
+
+
+  console.log(player)
+  return new State(state.level, state.actors, "lost");
+}
+
 Coin.prototype.collide = function(state){
   let filtered = state.actors.filter(a => a != this);
   let status = state.status;
+  //if there are no more coins
   if(!filtered.some(a => a.type == "coin")) status = "won";
   return new State(state.level, filtered, status);
 }
 
 Lava.prototype.update = function(time, state) {
+  //this is for moving lava only
   let newPos = this.pos.plus(this.speed.times(time));
   if (!state.level.touches(newPos, this.size, "wall")) {
+    //if it doesnt touch a wall, it keeps moving
     return new Lava(newPos, this.speed, this.reset);
   } else if (this.reset){
+    //else it resets
     //dripping lava has a reset position
     return new Lava(this.reset, this.speed, this.reset);
   } else {
@@ -280,9 +342,12 @@ Lava.prototype.update = function(time, state) {
   }
 }
 
+
 const wobbleSpeed = 8, wobbleDist = 0.07;
 
 Coin.prototype.update = function(time){
+  //wobble is incremented to track time
+  //wobble keeps incrementing
   let wobble = this.wobble + time * wobbleSpeed;
   let wobblePos = Math.sin(wobble) * wobbleDist;
   return new Coin(this.basePos.plus(new Vec(0, wobblePos)),
@@ -300,35 +365,60 @@ Player.prototype.update = function(time, state, keys) {
 
   let pos = this.pos;
   let movedX = pos.plus(new Vec(xSpeed * time, 0));
+  //calculates where player will be horizontally. if it doesnt touch a wall, then it updates
   if (!state.level.touches(movedX, this.size, "wall")) {
     pos = movedX;
   }
 
   let ySpeed = this.speed.y + time * gravity;
+  //starts out negative 17. increments by .5  everytime step.
+  //when user first jumps, ySpeed is set to negative jump speed(17)
+  //will keep moving downwards until it hits a wall(floor)
+  //the speed the user is going up is slowed each timestep by timestep * gravity(.5)
   let movedY = pos.plus(new Vec(0, ySpeed * time));
   if (!state.level.touches(movedY, this.size, "wall")) {
     pos = movedY;
-
   } else if(keys.ArrowUp && ySpeed > 0) {
-
     ySpeed = -jumpSpeed;
-    console.log(ySpeed)
+
   } else {
     ySpeed = 0;
   }
   return new Player(pos, new Vec(xSpeed, ySpeed));
 }
 
-function trackKeys(keys){
+Monster.prototype.update = function(time, state) {
+  let pos = this.pos;
+  let newPos = this.pos.plus(this.speed.times(time));
+
+  if (!state.level.touches(newPos, this.size, "wall")) {
+    return new Monster(newPos, this.speed, this.reset);
+  }
+  else {
+    //bouncing lava, inverts its speed by multiplying by -1
+    return new Monster(this.pos, this.speed.times(-1));
+  }
+}
+
+
+function trackKeys(keys, unregister){
+  //make it so it unregisters arrowKeys
   let down = Object.create(null);
-  function(track){
+  function track(event){
     if(keys.includes(event.key)) {
+      //if the key is down, then its true
+      //also updates when key is up and makes it false
       down[event.key] = event.type == "keydown";
+      // console.log(down)
       event.preventDefault();
     }
   }
   window.addEventListener("keydown", track);
   window.addEventListener("keyup", track);
+  if(unregister){
+    window.removeEventListener("keydown", track);
+    window.removeEventListener("keyup", track);
+  }
   return down;
 }
 
@@ -336,45 +426,128 @@ const arrowKeys = trackKeys(["ArrowLeft", "ArrowRight", "ArrowUp"]);
 
 function runAnimation(frameFunc){
   let lastTime = null;
+  //fram calculates the difference between now and the last time it was called.
   function frame(time){
+    //frame is automatically passed a DOMHighResTimeStamp which indicates the current time
     if(lastTime != null) {
       //chooses the minimum value, so if the player switches screens and then goes backround
-      //the time step is only 100.
+      //the time step is only 100, then divided by 1000.
       let timeStep = Math.min(time - lastTime, 100) / 1000;
+
       if(frameFunc(timeStep) === false) return;
     }
     lastTime = time;
     requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);r
+  requestAnimationFrame(frame);
 }
 
 function runLevel(level, Display) {
+  //make this register keys
   let display = new Display(document.body, level);
   let state = State.start(level);
   let ending = 1;
-  return new Promise(resolve => {
-    runAnimation(time => {
-      state = state.update(time, arrowKeys);
-      display.syncState(state);
-      if(state.status == "playing") {
-        return true;
-      } else if (ending > 0) {
-        ending -= time;
-        return true;
-      } else {
-        display.clear();
-        resolve(state.status);
-        return false;
-      }
+  const arrowKeys = trackKeys(["ArrowLeft", "ArrowRight", "ArrowUp"]);
+  //ending is the amount of seconds to wait after the game has either been won or lost
+  //decrements by the timeStep
+  let pause = false;
+    return new Promise(resolve => {
+      window.addEventListener('keydown', (e)=> {
+        if(e.key == "Escape"){
+          pause = !pause
+          if(!pause){
+            runAnimation(time => {
+              state = state.update(time, arrowKeys);
+              display.syncState(state);
+              if(state.status == "playing" && !pause) {
+                return true;
+              } else if (pause) {
+                console.log('you paused me');
+                return false
+              }
+              else if (ending > 0) {
+                // console.log(ending)
+                ending -= time;
+                return true;
+              } else {
+                display.clear();
+                resolve(state.status);
+                trackKeys(["ArrowLeft", "ArrowRight", "ArrowUp"], true);
+                return false;
+              }
+            });
+          }
+        }
+      })
+
+      runAnimation(time => {
+        state = state.update(time, arrowKeys);
+        display.syncState(state);
+        if(state.status == "playing" && !pause) {
+          return true;
+        } else if (pause) {
+          console.log('you paused me');
+          return false
+        }
+        else if (ending > 0) {
+          ending -= time;
+          // console.log(ending)
+          return true;
+        } else {
+          display.clear();
+          resolve(state.status);
+          return false;
+        }
+      });
     });
-  });
 }
 
 async function runGame(plans, Display) {
+  let playerLives = 3;
   for(let level = 0; level < plans.length;){
     let status = await runLevel(new Level(plans[level]), Display);
     if(status == "won") level++;
+    if(status == "lost"){
+      if(playerLives > 0){
+          playerLives -= 1;
+      }
+      else{
+        console.log("You've lost!")
+        level = 0;
+        playerLives = 3;
+      }
+      console.log(playerLives)
+    }
   }
   console.log("You've won!");
+}
+
+class CanvasDisplay {
+  constructor(parent, level){
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = Math.min(600, level.width * scale);
+    this.canvas.height = Math.min(450, level.height * scale);
+    parent.appendChild(this.canvas);
+    this.cx = this.canvas.getContext("2d");
+
+    this.flipPlayer = false;
+
+    this.viewport = {
+      left: 0;
+      top: 0;
+      width: this.canvas.width / scale,
+      height: this.canvas.heigth / scale
+    };
+  }
+
+  clear() {
+    this.canvas.remove();
+  }
+}
+
+CanvasDisplay.prototype.syncState = function(state){
+  this.updateViewport(state);
+  this.clearDisplay(state);
+  this.drawBackground(state);
+  this.drawActors(state);
 }
