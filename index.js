@@ -569,3 +569,14 @@ CanvasDisplay.prototype.updateViewport = function(state) {
     view.top = Math.min(center.y + margin - view.height, state.level.height - view.height);
   }
 }
+
+CanvasDisplay.prototype.clearDisplay = function(status) {
+  if(status == 'won'){
+    this.cx.fillStyle = "rgb(68,191,255)";
+  } else if(status == "lost"){
+    this.cx.fillStyle = "rgb(44,136,214)";
+  } else {
+    this.cx.fillStyle = "rgb(52,166,251)"
+  }
+  this.cx.fillRect(0,0,this.canvas.width, this.canvas.height)
+}
